@@ -13,7 +13,7 @@ Fork 本仓库，然后点击你的仓库右上角的 Settings，找到 Secrets 
 
 为了在获取积分失败后能及时得到通知，故追加了一个NOTIFY_URL的配置项，用来做通知的。此配置为可选项，当脚本执行失败时会通过向该配置指定的url地址发起指定请求方式（get/post/put，默认get）的http(s)请求，告知失败情况。推荐使用[方糖](http://sc.ftqq.com/3.version)，格式如：
 
-> GET  https://sc.ftqq.com/xxxxxx.send?text=主人，HostLoc积分赚取失败，赶紧去瞅瞅
+> GET  https://sc.ftqq.com/xxxxxx.send?text=主人，HostLoc积分赚取失败，赶紧去瞅瞅！
 
 设置好环境变量后点击你的仓库上方的 Actions 选项，会打开一个如下的页面，点击 `I understand...` 按钮确认在 Fork 的仓库上启用 GitHub Actions 。
 
