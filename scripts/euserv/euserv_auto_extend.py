@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import requests
@@ -6,37 +7,45 @@ from bs4 import BeautifulSoup
 
 USERNAME = os.environ["EUSERV_USERNAME"]
 PASSWORD = os.environ["EUSERV_PASSWORD"]
-#PROXIES = {
-#    "http": "http://127.0.0.1:10809",
-#    "https": "http://127.0.0.1:10809"
-#}
+
+PROXIES = {
+    "http": "http://127.0.0.1:10808",
+    "https": "http://127.0.0.1:10808"
+}
 
 
-def login(username, password) -> (str, requests.session):
+def login(username: str, password: str) -> (str, requests.session):
     headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/83.0.4103.116 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/92.0.4515.131 Safari/537.36",
         "origin": "https://www.euserv.com"
     }
+    url = "https://support.euserv.com/index.iphp"
+    session = requests.Session()
+
+    sess = session.get(url, headers=headers)
+    sess_id = re.findall("PHPSESSID=(\\w{10,100});", str(sess.headers))[0]
+    # 访问png
+    png_url = "https://support.euserv.com/pic/logo_small.png"
+    session.get(png_url, headers=headers)
+
     login_data = {
         "email": username,
         "password": password,
         "form_selected_language": "en",
         "Submit": "Login",
-        "subaction": "login"
+        "subaction": "login",
+        "sess_id": sess_id
     }
-    url = "https://support.euserv.com/index.iphp"
-    session = requests.Session()
     f = session.post(url, headers=headers, data=login_data)
     f.raise_for_status()
+
     if f.text.find('Hello') == -1:
         return '-1', session
-    # print(f.request.url)
-    sess_id = f.request.url[f.request.url.index('=') + 1:len(f.request.url)]
     return sess_id, session
 
 
-def get_servers(sess_id, session) -> {}:
+def get_servers(sess_id: str, session: requests.session) -> {}:
     d = {}
     url = "https://support.euserv.com/index.iphp?sess_id=" + sess_id
     headers = {
@@ -57,7 +66,7 @@ def get_servers(sess_id, session) -> {}:
     return d
 
 
-def renew(sess_id, session, password, order_id) -> bool:
+def renew(sess_id: str, session: requests.session, password: str, order_id: str) -> bool:
     url = "https://support.euserv.com/index.iphp"
     headers = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -96,14 +105,14 @@ def renew(sess_id, session, password, order_id) -> bool:
     return True
 
 
-def check(sess_id, session):
+def check(sess_id: str, session: requests.session):
     print("Checking.......")
     d = get_servers(sess_id, session)
     flag = True
-    for k, v in d.items():
-        if v:
+    for key, val in d.items():
+        if val:
             flag = False
-            print("ServerID: %s Renew Failed!" % (k.replace(''.join(list(k)[1:-1]),'****')))
+            print("ServerID: %s Renew Failed!" % key)
     if flag:
         print("ALL Work Done! Enjoy")
 
@@ -112,8 +121,8 @@ if __name__ == "__main__":
     if not USERNAME or not PASSWORD:
         print("你没有添加任何账户")
         exit(1)
-    user_list = USERNAME.split(',')
-    passwd_list = PASSWORD.split(',')
+    user_list = USERNAME.strip().split()
+    passwd_list = PASSWORD.strip().split()
     if len(user_list) != len(passwd_list):
         print("The number of usernames and passwords do not match!")
         exit(1)
@@ -129,11 +138,11 @@ if __name__ == "__main__":
         for k, v in SERVERS.items():
             if v:
                 if not renew(sessid, s, passwd_list[i], k):
-                    print("ServerID: %s Renew Error!" % (k.replace(''.join(list(k)[1:-1]),'****')))
+                    print("ServerID: %s Renew Error!" % k)
                 else:
-                    print("ServerID: %s has been successfully renewed!" % (k.replace(''.join(list(k)[1:-1]),'****')))
+                    print("ServerID: %s has been successfully renewed!" % k)
             else:
-                print("ServerID: %s does not need to be renewed" % (k.replace(''.join(list(k)[1:-1]),'****')))
+                print("ServerID: %s does not need to be renewed" % k)
         time.sleep(15)
         check(sessid, s)
         time.sleep(5)
